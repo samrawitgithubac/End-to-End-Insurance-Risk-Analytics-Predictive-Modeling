@@ -340,6 +340,19 @@ This is a learning project for the Week 3 challenge. Contributions should follow
 
 [Specify your license here, if applicable]
 
+---
+
+## Contact and Support
+
+**Facilitators:**
+- Kerod
+- Mahbubah
+- Filimon
+
+For questions or support, please open an issue in the repository or contact the facilitators.
+
+---
+
 ## References
 
 - [Insurance Analytics Resources](https://www.fsrao.ca/media/11501/download)
