@@ -15,6 +15,8 @@ src/
 
 # Data files and folders (large files should not be committed)
 data/
+# Exception: Track .dvc files in data/ directory (DVC metadata files)
+!data/*.dvc
 *.csv
 *.xlsx
 *.xls
@@ -26,9 +28,9 @@ data/
 *.pkl
 *.pickle
 
-# DVC cache and files (if using DVC)
+# DVC cache (if using DVC)
+# Note: .dvc/ directory and *.dvc files should be tracked in Git
 .dvc/cache/
-*.dvc
 
 # Python cache
 __pycache__/
