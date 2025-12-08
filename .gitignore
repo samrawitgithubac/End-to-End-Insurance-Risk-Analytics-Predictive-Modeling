@@ -12,3 +12,47 @@
 
 pkg/
 src/
+
+# Data files and folders (large files should not be committed)
+data/
+*.csv
+*.xlsx
+*.xls
+*.txt
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+
+# DVC cache and files (if using DVC)
+.dvc/cache/
+*.dvc
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
