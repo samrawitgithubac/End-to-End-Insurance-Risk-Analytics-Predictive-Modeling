@@ -41,6 +41,16 @@ ENV/
 data/*.csv
 data/*.xlsx
 data/*.parquet
+*.csv
+*.xlsx
+*.xls
+*.txt
+*.parquet
+*.feather
+*.h5
+*.hdf5
+*.pkl
+*.pickle
 
 # DVC
 .dvc/cache
@@ -57,7 +67,27 @@ Thumbs.db
 
 # Logs
 *.log
+*.log.*
 
 # Temporary files
 *.tmp
 *.temp
+
+# Additional file types
+*.tar
+*.tar.*
+*.jar
+*.exe
+*.msi
+*.deb
+*.zip
+*.tgz
+*.sig
+
+# Package directories
+pkg/
+src/
+
+# Data directory (but track .dvc files)
+data/
+!data/*.dvc
