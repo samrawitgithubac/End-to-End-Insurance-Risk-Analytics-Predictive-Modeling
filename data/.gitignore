@@ -1,0 +1,12 @@
+# Ignore all data files - they are tracked by DVC
+*.csv
+*.xlsx
+*.parquet
+*.json
+*.pkl
+*.h5
+*.hdf5
+
+# But keep the directory structure
+!.gitignore
+
