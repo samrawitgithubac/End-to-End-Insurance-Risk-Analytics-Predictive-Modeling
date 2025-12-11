@@ -1,0 +1,300 @@
+import json
+
+notebook = {
+    "cells": [
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "# Task 4: Machine Learning Modeling\n",
+                "## Insurance Risk Analytics - Predictive Modeling\n",
+                "\n",
+                "### Objectives:\n",
+                "- Build predictive models for claim severity prediction\n",
+                "- Develop premium optimization models\n",
+                "- Evaluate and compare multiple ML algorithms\n",
+                "- Analyze feature importance using SHAP/LIME\n",
+                "- Provide business recommendations"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Import libraries\n",
+                "import pandas as pd\n",
+                "import numpy as np\n",
+                "import matplotlib.pyplot as plt\n",
+                "import seaborn as sns\n",
+                "from sklearn.model_selection import train_test_split\n",
+                "from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error\n",
+                "import warnings\n",
+                "warnings.filterwarnings('ignore')\n",
+                "\n",
+                "# Import custom modules\n",
+                "import sys\n",
+                "sys.path.append('../')\n",
+                "from src.data_processing import DataProcessor\n",
+                "from src.models import LinearRegressionModel, RandomForestModel, XGBoostModel, ModelComparator\n",
+                "\n",
+                "# Set plotting style\n",
+                "plt.style.use('seaborn-v0_8-whitegrid')\n",
+                "sns.set_palette('husl')\n",
+                "plt.rcParams['figure.figsize'] = (12, 6)"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Load data\n",
+                "try:\n",
+                "    df = pd.read_csv('../data/insurance_data.csv', low_memory=False)\n",
+                "    print(f'Data loaded: {df.shape[0]} rows, {df.shape[1]} columns')\n",
+                "except FileNotFoundError:\n",
+                "    print('Data file not found. Please add your data to ../data/insurance_data.csv')"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Model 1: Claim Severity Prediction\n",
+                "\n",
+                "Predict TotalClaims for policies that have claims (TotalClaims > 0)"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Prepare data for claim severity (policies with claims only)\n",
+                "processor = DataProcessor()\n",
+                "df_processed = processor.create_features(df)\n",
+                "df_processed = processor.handle_missing_values(df_processed)\n",
+                "df_with_claims = df_processed[df_processed['TotalClaims'] > 0].copy()\n",
+                "\n",
+                "X_sev, y_sev = processor.prepare_for_modeling(df_with_claims, target_column='TotalClaims')\n",
+                "X_train_sev, X_test_sev, y_train_sev, y_test_sev = train_test_split(\n",
+                "    X_sev, y_sev, test_size=0.2, random_state=42\n",
+                ")\n",
+                "print(f'Training set: {X_train_sev.shape[0]} samples')\n",
+                "print(f'Test set: {X_test_sev.shape[0]} samples')"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Train models\n",
+                "models_sev = {\n",
+                "    'Linear Regression': LinearRegressionModel(),\n",
+                "    'Random Forest': RandomForestModel(n_estimators=100, random_state=42),\n",
+                "    'XGBoost': XGBoostModel(n_estimators=100, random_state=42)\n",
+                "}\n",
+                "\n",
+                "print('Training models for Claim Severity Prediction...')\n",
+                "for name, model in models_sev.items():\n",
+                "    print(f'  Training {name}...')\n",
+                "    model.train(X_train_sev, y_train_sev)\n",
+                "print('All models trained successfully!')"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Evaluate models\n",
+                "comparator_sev = ModelComparator()\n",
+                "for model in models_sev.values():\n",
+                "    comparator_sev.add_model(model)\n",
+                "\n",
+                "results_sev = comparator_sev.evaluate_all(X_test_sev, y_test_sev)\n",
+                "print('\\n' + '='*80)\n",
+                "print('CLAIM SEVERITY PREDICTION - MODEL COMPARISON')\n",
+                "print('='*80)\n",
+                "print(results_sev.to_string(index=False))\n",
+                "print('='*80)\n",
+                "\n",
+                "# Save results\n",
+                "results_sev.to_csv('../reports/claim_severity_model_results.csv', index=False)"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Model 2: Premium Optimization\n",
+                "\n",
+                "Predict optimal premium values"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Prepare data for premium prediction\n",
+                "target = 'CalculatedPremiumPerTerm' if 'CalculatedPremiumPerTerm' in df_processed.columns else 'TotalPremium'\n",
+                "X_prem, y_prem = processor.prepare_for_modeling(df_processed, target_column=target)\n",
+                "X_train_prem, X_test_prem, y_train_prem, y_test_prem = train_test_split(\n",
+                "    X_prem, y_prem, test_size=0.2, random_state=42\n",
+                ")\n",
+                "\n",
+                "models_prem = {\n",
+                "    'Linear Regression': LinearRegressionModel(),\n",
+                "    'Random Forest': RandomForestModel(n_estimators=100, random_state=42),\n",
+                "    'XGBoost': XGBoostModel(n_estimators=100, random_state=42)\n",
+                "}\n",
+                "\n",
+                "print('Training models for Premium Optimization...')\n",
+                "for name, model in models_prem.items():\n",
+                "    model.train(X_train_prem, y_train_prem)\n",
+                "\n",
+                "comparator_prem = ModelComparator()\n",
+                "for model in models_prem.values():\n",
+                "    comparator_prem.add_model(model)\n",
+                "\n",
+                "results_prem = comparator_prem.evaluate_all(X_test_prem, y_test_prem)\n",
+                "print('\\n' + '='*80)\n",
+                "print('PREMIUM OPTIMIZATION - MODEL COMPARISON')\n",
+                "print('='*80)\n",
+                "print(results_prem.to_string(index=False))\n",
+                "print('='*80)\n",
+                "\n",
+                "# Save results\n",
+                "results_prem.to_csv('../reports/premium_optimization_model_results.csv', index=False)"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Feature Importance Analysis"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# Get best model and feature importance\n",
+                "best_model = min(models_sev.values(), key=lambda m: m.evaluate(X_test_sev, y_test_sev)['RMSE'])\n",
+                "print(f'Best model: {best_model.model_name}')\n",
+                "\n",
+                "if best_model.feature_importance_ is not None:\n",
+                "    top_features = best_model.feature_importance_.head(10)\n",
+                "    print('\\nTop 10 Most Important Features:')\n",
+                "    print(top_features)\n",
+                "    \n",
+                "    # Visualize\n",
+                "    fig, ax = plt.subplots(figsize=(10, 6))\n",
+                "    top_features.plot(kind='barh', ax=ax, color='steelblue')\n",
+                "    ax.set_xlabel('Feature Importance', fontsize=11)\n",
+                "    ax.set_title(f'Top 10 Feature Importance - {best_model.model_name}', fontsize=12, fontweight='bold')\n",
+                "    ax.grid(axis='x', alpha=0.3)\n",
+                "    plt.tight_layout()\n",
+                "    plt.savefig('../reports/figures/feature_importance.png', dpi=300, bbox_inches='tight')\n",
+                "    plt.show()"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "# SHAP Analysis (if available)\n",
+                "try:\n",
+                "    import shap\n",
+                "    if isinstance(best_model, (RandomForestModel, XGBoostModel)):\n",
+                "        print('Computing SHAP values...')\n",
+                "        explainer = shap.TreeExplainer(best_model.model)\n",
+                "        shap_values = explainer.shap_values(X_test_sev.head(100))\n",
+                "        shap.summary_plot(shap_values, X_test_sev.head(100), show=False)\n",
+                "        plt.tight_layout()\n",
+                "        plt.savefig('../reports/figures/shap_summary.png', dpi=300, bbox_inches='tight')\n",
+                "        plt.show()\n",
+                "        print('SHAP analysis completed!')\n",
+                "    else:\n",
+                "        print('SHAP analysis available for tree-based models only.')\n",
+                "except ImportError:\n",
+                "    print('SHAP not installed. Install with: pip install shap')\n",
+                "except Exception as e:\n",
+                "    print(f'Error in SHAP analysis: {e}')"
+            ]
+        },
+        {
+            "cell_type": "markdown",
+            "metadata": {},
+            "source": [
+                "## Business Recommendations"
+            ]
+        },
+        {
+            "cell_type": "code",
+            "execution_count": None,
+            "metadata": {},
+            "outputs": [],
+            "source": [
+                "print('\\n' + '='*80)\n",
+                "print('BUSINESS RECOMMENDATIONS')\n",
+                "print('='*80)\n",
+                "\n",
+                "best_sev = results_sev.loc[results_sev['RMSE'].idxmin()]\n",
+                "print(f'\\n1. CLAIM SEVERITY PREDICTION:')\n",
+                "print(f'   Best Model: {best_sev[\"Model\"]}')\n",
+                "print(f'   RMSE: {best_sev[\"RMSE\"]:.2f}')\n",
+                "print(f'   R²: {best_sev[\"R2\"]:.3f}')\n",
+                "print(f'   Interpretation: Model explains {best_sev[\"R2\"]*100:.1f}% of variance in claim amounts.')\n",
+                "\n",
+                "best_prem = results_prem.loc[results_prem['RMSE'].idxmin()]\n",
+                "print(f'\\n2. PREMIUM OPTIMIZATION:')\n",
+                "print(f'   Best Model: {best_prem[\"Model\"]}')\n",
+                "print(f'   RMSE: {best_prem[\"RMSE\"]:.2f}')\n",
+                "print(f'   R²: {best_prem[\"R2\"]:.3f}')\n",
+                "print(f'   Interpretation: Model explains {best_prem[\"R2\"]*100:.1f}% of variance in premiums.')\n",
+                "\n",
+                "if best_model.feature_importance_ is not None:\n",
+                "    top_3 = best_model.feature_importance_.head(3)\n",
+                "    print(f'\\n3. TOP INFLUENTIAL FEATURES:')\n",
+                "    for feat, imp in top_3.items():\n",
+                "        print(f'   - {feat}: {imp:.4f}')\n",
+                "    print('\\n   Recommendation: Focus pricing adjustments on these key factors.')\n",
+                "\n",
+                "print('\\n' + '='*80)"
+            ]
+        }
+    ],
+    "metadata": {
+        "kernelspec": {
+            "display_name": "Python 3",
+            "language": "python",
+            "name": "python3"
+        },
+        "language_info": {
+            "name": "python",
+            "version": "3.9.0"
+        }
+    },
+    "nbformat": 4,
+    "nbformat_minor": 4
+}
+
+with open('notebooks/modeling.ipynb', 'w') as f:
+    json.dump(notebook, f, indent=1)
+
+print("Modeling notebook created successfully!")
+
